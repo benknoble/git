@@ -22,7 +22,7 @@
  * to have at least 500 lstat's per thread for it to
  * be worth starting a thread.
  */
-#define MAX_PARALLEL (20)
+#define MAX_PARALLEL (60)
 #define THREAD_COST (500)
 
 struct progress_data {
@@ -59,8 +59,21 @@ static void *preload_thread(void *_data)
 
 		if (ce_stage(ce))
 			continue;
-		if (S_ISGITLINK(ce->ce_mode))
+		if (S_ISGITLINK(ce->ce_mode)) {
+			// This call evaluates the submodule HEAD for GITLINK, which really does determine
+			// if there is a change (for index purposes). We can't use the traditional path of
+			// marking as VALID, because valid can't be used for submodules due to other code
+			// paths in which valid may skip investigation of the worktree in the submodule.
+			// Gitlinks also aren't statable, or fsmonitorable, so caching doesn't have the same
+			// semantics.
+			// Use a special entry to mark the ref change state and its validity. Future calls
+			// to ce_compare_gitlink will leverage this.
+			if (lstat(ce->name, &st))
+				continue;
+			ce->sub_ref_state = (!!(ie_match_stat(index, ce, &st,
+					CE_MATCH_RACY_IS_DIRTY|CE_MATCH_IGNORE_FSMONITOR) & DATA_CHANGED) << 1) | 0x1;
 			continue;
+		}
 		if (ce_uptodate(ce))
 			continue;
 		if (ce_skip_worktree(ce))
@@ -107,11 +120,17 @@ void preload_index(struct index_state *index,
 	struct thread_data data[MAX_PARALLEL];
 	struct progress_data pd;
 	int t2_sum_lstat = 0;
+	int link_count = 0;
 
 	if (!HAVE_THREADS || !core_preload_index)
 		return;
 
-	threads = index->cache_nr / THREAD_COST;
+	for (i = 0; i < index->cache_nr; i++) {
+		link_count += (S_ISGITLINK(index->cache[i]->ce_mode));
+	}
+	// Exploring gitlinks are much more expensive than lstat, so modify the cost
+	threads = (index->cache_nr / THREAD_COST) + (link_count / 25);
+
 	if ((index->cache_nr > 1) && (threads < 2) && git_env_bool("GIT_TEST_PRELOAD_INDEX", 0))
 		threads = 2;
 	if (threads < 2)

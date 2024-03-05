@@ -271,6 +271,9 @@ static int ce_compare_gitlink(const struct cache_entry *ce)
 	 *
 	 * If so, we consider it always to match.
 	 */
+	if (ce->sub_ref_state & 0x1)
+		/* Check the cached value */
+		return ce->sub_ref_state >> 1;
 	if (resolve_gitlink_ref(ce->name, "HEAD", &oid) < 0)
 		return 0;
 	return !oideq(&oid, &ce->oid);

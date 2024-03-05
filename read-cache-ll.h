@@ -27,6 +27,7 @@ struct cache_entry {
 	unsigned int mem_pool_allocated;
 	unsigned int ce_namelen;
 	unsigned int index;	/* for link extension */
+	unsigned int sub_ref_state; /* TODO pack somewhere. Lowest bit valid, second lowest dirty. */
 	struct object_id oid;
 	char name[FLEX_ARRAY]; /* more */
 };
