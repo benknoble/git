@@ -316,9 +316,10 @@ int is_submodule_populated_gently(const char *path, int *return_error_code)
 	int ret = 0;
 	char *gitdir = xstrfmt("%s/.git", path);
 
-	if (resolve_gitdir_gently(gitdir, return_error_code))
+	struct strbuf resolved_gitdir_buf = STRBUF_INIT;
+	if (resolve_gitdir_gently(gitdir, return_error_code, &resolved_gitdir_buf))
 		ret = 1;
-
+	strbuf_release(&resolved_gitdir_buf);
 	free(gitdir);
 	return ret;
 }
@@ -1873,22 +1874,25 @@ unsigned is_submodule_modified(const char *path, int ignore_untracked)
 {
 	struct child_process cp = CHILD_PROCESS_INIT;
 	struct strbuf buf = STRBUF_INIT;
+	struct strbuf gitdirbuf = STRBUF_INIT;
 	FILE *fp;
 	unsigned dirty_submodule = 0;
 	const char *git_dir;
 	int ignore_cp_exit_code = 0;
 
 	strbuf_addf(&buf, "%s/.git", path);
-	git_dir = read_gitfile(buf.buf);
+	git_dir = read_gitfile_gently(buf.buf, NULL, &gitdirbuf);
 	if (!git_dir)
 		git_dir = buf.buf;
 	if (!is_git_directory(git_dir)) {
 		if (is_directory(git_dir))
 			die(_("'%s' not recognized as a git repository"), git_dir);
 		strbuf_release(&buf);
+		strbuf_release(&gitdirbuf);
 		/* The submodule is not checked out, so it is not modified */
 		return 0;
 	}
+		strbuf_release(&gitdirbuf);
 	strbuf_reset(&buf);
 
 	strvec_pushl(&cp.args, "status", "--porcelain=2", NULL);
@@ -1952,15 +1956,16 @@ int submodule_uses_gitfile(const char *path)
 {
 	struct child_process cp = CHILD_PROCESS_INIT;
 	struct strbuf buf = STRBUF_INIT;
-	const char *git_dir;
+	struct strbuf gitfilebuf = STRBUF_INIT;
 
 	strbuf_addf(&buf, "%s/.git", path);
-	git_dir = read_gitfile(buf.buf);
-	if (!git_dir) {
+	read_gitfile_gently(buf.buf, NULL, &gitfilebuf);
+	if (!gitfilebuf.buf) {
 		strbuf_release(&buf);
 		return 0;
 	}
 	strbuf_release(&buf);
+	strbuf_release(&gitfilebuf);
 
 	/* Now test that all nested submodules use a gitfile too */
 	strvec_pushl(&cp.args,
@@ -2270,6 +2275,7 @@ static void relocate_single_git_dir_into_superproject(const char *path,
 {
 	char *old_git_dir = NULL, *real_old_git_dir = NULL, *real_new_git_dir = NULL;
 	struct strbuf new_gitdir = STRBUF_INIT;
+	struct strbuf gitfilebuf = STRBUF_INIT;
 	const struct submodule *sub;
 
 	if (submodule_uses_worktrees(path))
@@ -2277,9 +2283,12 @@ static void relocate_single_git_dir_into_superproject(const char *path,
 		      "more than one worktree not supported"), path);
 
 	old_git_dir = xstrfmt("%s/.git", path);
-	if (read_gitfile(old_git_dir))
+	if (read_gitfile_gently(old_git_dir, NULL, &gitfilebuf)) {
 		/* If it is an actual gitfile, it doesn't need migration. */
+		strbuf_release(&gitfilebuf);
 		return;
+	}
+	strbuf_release(&gitfilebuf);
 
 	real_old_git_dir = real_pathdup(old_git_dir, 1);
 
@@ -2337,8 +2346,9 @@ void absorb_git_dir_into_superproject(const char *path,
 	int err_code;
 	const char *sub_git_dir;
 	struct strbuf gitdir = STRBUF_INIT;
+	struct strbuf resolved_gitdir_buf = STRBUF_INIT;
 	strbuf_addf(&gitdir, "%s/.git", path);
-	sub_git_dir = resolve_gitdir_gently(gitdir.buf, &err_code);
+	sub_git_dir = resolve_gitdir_gently(gitdir.buf, &err_code, &resolved_gitdir_buf);
 
 	/* Not populated? */
 	if (!sub_git_dir) {
@@ -2379,6 +2389,8 @@ void absorb_git_dir_into_superproject(const char *path,
 		free(real_sub_git_dir);
 		free(real_common_git_dir);
 	}
+
+	strbuf_release(&resolved_gitdir_buf);
 	strbuf_release(&gitdir);
 
 	absorb_git_dir_into_superproject_recurse(path, super_prefix);
@@ -2478,17 +2490,19 @@ int submodule_to_gitdir(struct strbuf *buf, const char *submodule)
 	const struct submodule *sub;
 	const char *git_dir;
 	int ret = 0;
+	struct strbuf gitfilebuf = STRBUF_INIT;
 
 	strbuf_reset(buf);
 	strbuf_addstr(buf, submodule);
 	strbuf_complete(buf, '/');
 	strbuf_addstr(buf, ".git");
 
-	git_dir = read_gitfile(buf->buf);
+	git_dir = read_gitfile_gently(buf->buf, NULL, &gitfilebuf);
 	if (git_dir) {
 		strbuf_reset(buf);
 		strbuf_addstr(buf, git_dir);
 	}
+	strbuf_release(&gitfilebuf);
 	if (!is_git_directory(buf->buf)) {
 		sub = submodule_from_path(the_repository, null_oid(),
 					  submodule);

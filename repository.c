@@ -128,7 +128,7 @@ static int repo_init_gitdir(struct repository *repo, const char *gitdir)
 	int ret = 0;
 	int error = 0;
 	char *abspath = NULL;
-	const char *resolved_gitdir;
+	struct strbuf resolved_gitdir = STRBUF_INIT;
 	struct set_gitdir_args args = { NULL };
 
 	abspath = real_pathdup(gitdir, 0);
@@ -138,15 +138,16 @@ static int repo_init_gitdir(struct repository *repo, const char *gitdir)
 	}
 
 	/* 'gitdir' must reference the gitdir directly */
-	resolved_gitdir = resolve_gitdir_gently(abspath, &error);
-	if (!resolved_gitdir) {
+	resolve_gitdir_gently(abspath, &error, &resolved_gitdir);
+	if (error) {
 		ret = -1;
 		goto out;
 	}
 
-	repo_set_gitdir(repo, resolved_gitdir, &args);
+	repo_set_gitdir(repo, resolved_gitdir.buf, &args);
 
 out:
+	strbuf_release(&resolved_gitdir);
 	free(abspath);
 	return ret;
 }

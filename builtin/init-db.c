@@ -198,11 +198,11 @@ int cmd_init_db(int argc, const char **argv, const char *prefix)
 	 */
 	if (real_git_dir) {
 		int err;
-		const char *p;
 		struct strbuf sb = STRBUF_INIT;
+		struct strbuf gitfile = STRBUF_INIT;
 
-		p = read_gitfile_gently(git_dir, &err);
-		if (p && get_common_dir(&sb, p)) {
+		read_gitfile_gently(git_dir, &err, &gitfile);
+		if (!err && get_common_dir(&sb, gitfile.buf)) {
 			struct strbuf mainwt = STRBUF_INIT;
 
 			strbuf_addbuf(&mainwt, &sb);
@@ -213,6 +213,7 @@ int cmd_init_db(int argc, const char **argv, const char *prefix)
 			git_dir = strbuf_detach(&sb, NULL);
 		}
 		strbuf_release(&sb);
+		strbuf_release(&gitfile);
 	}
 
 	if (is_bare_repository_cfg < 0)

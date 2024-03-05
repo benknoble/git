@@ -732,12 +732,14 @@ int cmd_rev_parse(int argc, const char **argv, const char *prefix)
 			}
 			if (!strcmp(arg, "--resolve-git-dir")) {
 				const char *gitdir = argv[++i];
+				struct strbuf resolved_gitdir = STRBUF_INIT;
 				if (!gitdir)
 					die(_("--resolve-git-dir requires an argument"));
-				gitdir = resolve_gitdir(gitdir);
+				gitdir = resolve_gitdir_gently(gitdir, NULL, &resolved_gitdir);
 				if (!gitdir)
 					die(_("not a gitdir '%s'"), argv[i]);
 				puts(gitdir);
+				strbuf_release(&resolved_gitdir);
 				continue;
 			}
 		}

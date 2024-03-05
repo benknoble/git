@@ -36,10 +36,9 @@ int is_nonbare_repository_dir(struct strbuf *path);
 #define READ_GITFILE_ERR_NOT_A_REPO 7
 #define READ_GITFILE_ERR_TOO_LARGE 8
 void read_gitfile_error_die(int error_code, const char *path, const char *dir);
-const char *read_gitfile_gently(const char *path, int *return_error_code);
-#define read_gitfile(path) read_gitfile_gently((path), NULL)
-const char *resolve_gitdir_gently(const char *suspect, int *return_error_code);
-#define resolve_gitdir(path) resolve_gitdir_gently((path), NULL)
+const char *read_gitfile_gently(const char *path, int *return_error_code, struct strbuf *buf);
+#define read_gitfile(path) read_gitfile_gently((path), NULL, NULL)
+const char *resolve_gitdir_gently(const char *suspect, int *return_error_code, struct strbuf *buf);
 
 void setup_work_tree(void);
 
