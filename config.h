@@ -118,7 +118,7 @@ struct config_options {
 
 /* Config source metadata for a given config key-value pair */
 struct key_value_info {
-	const char *filename;
+	char *filename;
 	int linenr;
 	enum config_origin_type origin_type;
 	enum config_scope scope;

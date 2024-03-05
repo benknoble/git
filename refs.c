@@ -2166,6 +2166,9 @@ struct ref_store *get_submodule_ref_store(const char *submodule)
 	size_t len;
 	struct repository *subrepo;
 
+	// TODO is this locking tolerable, and/or can we get any finer
+	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
 	if (!submodule)
 		return NULL;
 
@@ -2179,7 +2182,9 @@ struct ref_store *get_submodule_ref_store(const char *submodule)
 		/* We need to strip off one or more trailing slashes */
 		submodule = to_free = xmemdupz(submodule, len);
 
+	pthread_mutex_lock(&lock);
 	refs = lookup_ref_store_map(&submodule_ref_stores, submodule);
+	pthread_mutex_unlock(&lock);
 	if (refs)
 		goto done;
 
@@ -2202,10 +2207,14 @@ struct ref_store *get_submodule_ref_store(const char *submodule)
 		free(subrepo);
 		goto done;
 	}
+
+	pthread_mutex_lock(&lock);
+	// TODO maybe lock this separately
 	refs = ref_store_init(subrepo, submodule_sb.buf,
 			      REF_STORE_READ | REF_STORE_ODB);
 	register_ref_store_map(&submodule_ref_stores, "submodule",
 			       refs, submodule);
+	pthread_mutex_unlock(&lock);
 
 done:
 	strbuf_release(&submodule_sb);

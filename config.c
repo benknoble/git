@@ -1017,7 +1017,7 @@ static void kvi_from_source(struct config_source *cs,
 			    enum config_scope scope,
 			    struct key_value_info *out)
 {
-	out->filename = strintern(cs->name);
+	out->filename = strdup(cs->name);
 	out->origin_type = cs->origin_type;
 	out->linenr = cs->linenr;
 	out->scope = scope;
@@ -1857,6 +1857,7 @@ static int do_config_from(struct config_source *top, config_fn_t fn,
 
 	strbuf_release(&top->value);
 	strbuf_release(&top->var);
+	free(kvi.filename);
 
 	return ret;
 }
