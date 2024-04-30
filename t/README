@@ -1252,6 +1252,10 @@ use these, and "test_set_prereq" for how to define your own.
    Test is specific to packed/loose ref storage, and should be
    disabled for other ref storage backends
 
+ - ZSH
+
+   Test is specific to Zsh and requires it be available during testing.
+
 
 Tips for Writing Tests
 ----------------------

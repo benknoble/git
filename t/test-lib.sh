@@ -1773,6 +1773,7 @@ test -n "$USE_LIBPCRE2" && test_set_prereq LIBPCRE2
 test -z "$NO_GETTEXT" && test_set_prereq GETTEXT
 test -n "$SANITIZE_LEAK" && test_set_prereq SANITIZE_LEAK
 test -n "$GIT_VALGRIND_ENABLED" && test_set_prereq VALGRIND
+command -v zsh && test_set_prereq ZSH
 
 if test -z "$GIT_TEST_CHECK_CACHE_TREE"
 then

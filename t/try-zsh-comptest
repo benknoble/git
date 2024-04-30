@@ -1,0 +1,27 @@
+#! /bin/zsh -f
+
+zmodload zsh/zpty  # Load the pseudo terminal module.
+
+zpty comptest zsh -ife
+
+zpty -w comptest <<EOF
+        PS1='%% ' PS2='%% '
+        autoload -U compinit && compinit
+
+        compdef _my-command my-command
+        _my-command () {
+                _arguments '--help[display help text]' '--hagg[other option]'
+        }
+
+EOF
+
+# Simulate a command being typed, ending with TAB to get completions.
+zpty -wn comptest $'my-command \t\t\t'
+# zpty -w comptest $'\C-c'
+zpty -w comptest exit
+
+while zpty -r comptest REPLY; do
+  print -r -- ${REPLY%$'\n'}
+done
+
+zpty -d comptest  # Delete the pty.
