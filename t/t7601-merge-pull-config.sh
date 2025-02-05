@@ -113,6 +113,14 @@ test_expect_success 'pull.rebase not set and pull.ff=only (not-fast-forward)' '
 	test_grep ! "You have divergent branches" err
 '
 
+test_expect_success 'pull.rebase not set and pull.ff=only and branch.<name>.rebase=true (not-fast-forward)' '
+	git reset --hard c2 &&
+	test_config pull.ff only &&
+	git switch -c bc2 &&
+	test_config branch.bc2.rebase true &&
+	git pull . c1
+'
+
 test_expect_success 'pull.rebase not set and --rebase given (not-fast-forward)' '
 	git reset --hard c2 &&
 	git pull --rebase . c1 2>err &&

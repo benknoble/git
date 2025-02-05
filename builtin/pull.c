@@ -326,13 +326,13 @@ static const char *config_get_ff(void)
 }
 
 /**
- * Returns the default configured value for --rebase. It first looks for the
+ * Returns the default configured value for --rebase. It looks for the
  * value of "branch.$curr_branch.rebase", where $curr_branch is the current
  * branch, and if HEAD is detached or the configuration key does not exist,
- * looks for the value of "pull.rebase". If both configuration keys do not
- * exist, returns REBASE_FALSE.
+ * considers the result unspecified. Follow up by checking
+ * config_get_rebase_pull.
  */
-static enum rebase_type config_get_rebase(int *rebase_unspecified)
+static enum rebase_type config_get_rebase_branch(int *rebase_unspecified)
 {
 	struct branch *curr_branch = branch_get("HEAD");
 	const char *value;
@@ -349,11 +349,22 @@ static enum rebase_type config_get_rebase(int *rebase_unspecified)
 		free(key);
 	}
 
+	*rebase_unspecified = 1;
+	return REBASE_INVALID;
+}
+
+/*
+ * Looks for the value of "pull.rebase". If it does not exist, returns
+ * REBASE_FALSE.
+ */
+static enum rebase_type config_get_rebase_pull(int *rebase_unspecified)
+{
+	const char *value;
+
 	if (!git_config_get_value("pull.rebase", &value))
 		return parse_config_rebase("pull.rebase", value, 1);
 
 	*rebase_unspecified = 1;
-
 	return REBASE_FALSE;
 }
 
@@ -1026,7 +1037,7 @@ int cmd_pull(int argc,
 		 * are relying on the next if-condition happening before
 		 * the config_get_rebase() call so that an explicit
 		 * "--rebase" can override a config setting of
-		 * pull.ff=only.
+		 * pull.ff=only. [continued…]
 		 */
 		if (opt_rebase >= 0 && opt_ff && !strcmp(opt_ff, "--ff-only")) {
 			free(opt_ff);
@@ -1034,8 +1045,20 @@ int cmd_pull(int argc,
 		}
 	}
 
-	if (opt_rebase < 0)
-		opt_rebase = config_get_rebase(&rebase_unspecified);
+	if (opt_rebase < 0) {
+		/*
+		 * […continued] But, if the config requests rebase *for this
+		 * branch*, override --ff-only, which otherwise takes precedence
+		 * over pull.rebase=true.
+		 */
+		opt_rebase = config_get_rebase_branch(&rebase_unspecified);
+		if (opt_rebase >= 0 && opt_ff && !strcmp(opt_ff, "--ff-only")) {
+			free(opt_ff);
+			opt_ff = xstrdup("--ff");
+		} else {
+		    opt_rebase = config_get_rebase_pull(&rebase_unspecified);
+		}
+	}
 
 	if (repo_read_index_unmerged(the_repository))
 		die_resolve_conflict("pull");
