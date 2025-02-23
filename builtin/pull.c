@@ -314,6 +314,11 @@ static const char *parse_ff_value(const char *value) {
 }
 
 /**
+ * Returns the default configured value for --ff[-only]. It first looks for the
+ * value of "branch.$current_branch.ff" (and warns if it is found but
+ * malformed). If HEAD is detached or the configuration key does not exist, it
+ * uses "pull.ff".
+ *
  * If pull.ff is unset, returns NULL. If pull.ff is "true", returns "--ff". If
  * pull.ff is "false", returns "--no-ff". If pull.ff is "only", returns
  * "--ff-only". Otherwise, if pull.ff is set to an invalid value, die with an
@@ -321,13 +326,29 @@ static const char *parse_ff_value(const char *value) {
  */
 static const char *config_get_ff(void)
 {
+	struct branch *curr_branch = branch_get("HEAD");
 	const char *value;
+	const char *ret;
+
+	if (curr_branch) {
+		char *key = xstrfmt("branch.%s.ff", curr_branch->name);
+		if (!git_config_get_value(key, &value) && (ret = parse_ff_value(value))) {
+			// SAFETY: We must not double-free key; the later free
+			// occurs if we do not return from this conditional.
+			free(key);
+			return ret;
+		}
+
+		warning(_("invalid value for '%s': '%s'"), key, value);
+		// SAFETY: We must not double-free key; the earlier free occurs
+		// prior to a return.
+		free(key);
+	}
 
 	if (git_config_get_value("pull.ff", &value))
 		return NULL;
 
-	const char *ret = parse_ff_value(value);
-	if (ret)
+	if ((ret = parse_ff_value(value)))
 		return ret;
 
 	die(_("invalid value for '%s': '%s'"), "pull.ff", value);
