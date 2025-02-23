@@ -300,6 +300,10 @@ static void set_reflog_message(int argc, const char **argv)
 }
 
 /**
+ * Returns the default configured value for --ff[-only]. It first looks for the
+ * value of "branch.$current_branch.ff". If HEAD is detached or the
+ * configuration key does not exist, it uses "pull.ff".
+ *
  * If pull.ff is unset, returns NULL. If pull.ff is "true", returns "--ff". If
  * pull.ff is "false", returns "--no-ff". If pull.ff is "only", returns
  * "--ff-only". Otherwise, if pull.ff is set to an invalid value, die with an
@@ -307,7 +311,34 @@ static void set_reflog_message(int argc, const char **argv)
  */
 static const char *config_get_ff(void)
 {
+	struct branch *curr_branch = branch_get("HEAD");
 	const char *value;
+
+	if (curr_branch) {
+		char *key = xstrfmt("branch.%s.ff", curr_branch->name);
+
+		if (!git_config_get_value(key, &value)) {
+			free(key);
+
+			// TODO: extract common procedure
+			switch (git_parse_maybe_bool(value)) {
+				case 0:
+					return "--no-ff";
+				case 1:
+					return "--ff";
+			}
+
+			if (!strcmp(value, "only"))
+				return "--ff-only";
+
+			// TODO: dying with error message here is not what
+			// config_get_rebase does, but it would be a nice
+			// warning.
+
+		} else {
+			free(key);
+		}
+	}
 
 	if (git_config_get_value("pull.ff", &value))
 		return NULL;
