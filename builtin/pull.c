@@ -299,6 +299,20 @@ static void set_reflog_message(int argc, const char **argv)
 	strbuf_release(&msg);
 }
 
+static const char *parse_ff_value(const char *value) {
+	switch (git_parse_maybe_bool(value)) {
+	case 0:
+		return "--no-ff";
+	case 1:
+		return "--ff";
+	}
+
+	if (!strcmp(value, "only"))
+		return "--ff-only";
+
+	return NULL;
+}
+
 /**
  * If pull.ff is unset, returns NULL. If pull.ff is "true", returns "--ff". If
  * pull.ff is "false", returns "--no-ff". If pull.ff is "only", returns
@@ -312,15 +326,9 @@ static const char *config_get_ff(void)
 	if (git_config_get_value("pull.ff", &value))
 		return NULL;
 
-	switch (git_parse_maybe_bool(value)) {
-	case 0:
-		return "--no-ff";
-	case 1:
-		return "--ff";
-	}
-
-	if (!strcmp(value, "only"))
-		return "--ff-only";
+	const char *ret = parse_ff_value(value);
+	if (ret)
+		return ret;
 
 	die(_("invalid value for '%s': '%s'"), "pull.ff", value);
 }
