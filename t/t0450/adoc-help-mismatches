@@ -50,6 +50,7 @@ restore
 rev-parse
 show
 stage
+stash
 switch
 update-index
 update-ref
