@@ -118,6 +118,17 @@ Cf. <2f5de416-04ba-c23d-1e0b-83bb655829a7@zombino.com>,
 <20170223155046.e7nxivfwqqoprsqj@LykOS.localdomain>,
 <CA+EOSBncr=4a4d8n9xS4FNehyebpmX8JiUwCsXD47EQDE+DiUQ@mail.gmail.com>.
 
+* The git-stash(1) command now tries to reinstate the index by default in
+  the "apply" and "pop" modes. Not doing so creates a common trap: "git stash
+  apply" is not the reverse of "git stash push" because carefully staged indices
+  are lost and have to be manually recreated.
++
+Now git-stash(1) will behave like "--index" was given in the "apply" and "pop"
+modes. Use "--no-index" to disable this behavior.
++
+Cf. <CAPx1GvcxyDDQmCssMjEnt6JoV6qPc5ZUpgPLX3mpUC_4PNYA1w@mail.gmail.com>,
+<c5a811ac-8cd3-c389-ac6d-29020a648c87@gmail.com>.
+
 === Removals
 
 * Support for grafting commits has long been superseded by git-replace(1).
