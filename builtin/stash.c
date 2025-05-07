@@ -38,10 +38,17 @@
 	N_("git stash show [-u | --include-untracked | --only-untracked] [<diff-options>] [<stash>]")
 #define BUILTIN_STASH_DROP_USAGE \
 	N_("git stash drop [-q | --quiet] [<stash>]")
+#ifdef WITH_BREAKING_CHANGES
+#define BUILTIN_STASH_POP_USAGE \
+	N_("git stash pop [--no-index] [-q | --quiet] [<stash>]")
+#define BUILTIN_STASH_APPLY_USAGE \
+	N_("git stash apply [--no-index] [-q | --quiet] [<stash>]")
+#else
 #define BUILTIN_STASH_POP_USAGE \
 	N_("git stash pop [--index] [-q | --quiet] [<stash>]")
 #define BUILTIN_STASH_APPLY_USAGE \
 	N_("git stash apply [--index] [-q | --quiet] [<stash>]")
+#endif /* WITH_BREAKING_CHANGES */
 #define BUILTIN_STASH_BRANCH_USAGE \
 	N_("git stash branch <branchname> [<stash>]")
 #define BUILTIN_STASH_STORE_USAGE \
@@ -562,8 +569,13 @@ static int do_apply_stash(const char *prefix, struct stash_info *info,
 			ret = apply_cached(&out);
 			strbuf_release(&out);
 			if (ret)
+#ifdef WITH_BREAKING_CHANGES
+				return error(_("conflicts in index. "
+					       "Try with --no-index."));
+#else
 				return error(_("conflicts in index. "
 					       "Try without --index."));
+#endif /* WITH_BREAKING_CHANGES */
 
 			discard_index(the_repository->index);
 			repo_read_index(the_repository);
@@ -658,12 +670,21 @@ static int apply_stash(int argc, const char **argv, const char *prefix,
 {
 	int ret = -1;
 	int quiet = 0;
+#ifdef WITH_BREAKING_CHANGES
+	int no_index = 0;
+#else
 	int index = 0;
+#endif /* WITH_BREAKING_CHANGES */
 	struct stash_info info = STASH_INFO_INIT;
 	struct option options[] = {
 		OPT__QUIET(&quiet, N_("be quiet, only report errors")),
+#ifdef WITH_BREAKING_CHANGES
+		OPT_BOOL(0, "no-index", &no_index,
+			 N_("do not attempt to recreate the index")),
+#else
 		OPT_BOOL(0, "index", &index,
 			 N_("attempt to recreate the index")),
+#endif /* WITH_BREAKING_CHANGES */
 		OPT_END()
 	};
 
@@ -673,7 +694,11 @@ static int apply_stash(int argc, const char **argv, const char *prefix,
 	if (get_stash_info(&info, argc, argv))
 		goto cleanup;
 
+#ifdef WITH_BREAKING_CHANGES
+	ret = do_apply_stash(prefix, &info, !no_index, quiet);
+#else
 	ret = do_apply_stash(prefix, &info, index, quiet);
+#endif /* WITH_BREAKING_CHANGES */
 cleanup:
 	free_stash_info(&info);
 	return ret;
@@ -755,13 +780,22 @@ static int pop_stash(int argc, const char **argv, const char *prefix,
 		     struct repository *repo UNUSED)
 {
 	int ret = -1;
+#ifdef WITH_BREAKING_CHANGES
+	int no_index = 0;
+#else
 	int index = 0;
+#endif /* WITH_BREAKING_CHANGES */
 	int quiet = 0;
 	struct stash_info info = STASH_INFO_INIT;
 	struct option options[] = {
 		OPT__QUIET(&quiet, N_("be quiet, only report errors")),
+#ifdef WITH_BREAKING_CHANGES
+		OPT_BOOL(0, "no-index", &no_index,
+			 N_("do not attempt to recreate the index")),
+#else
 		OPT_BOOL(0, "index", &index,
 			 N_("attempt to recreate the index")),
+#endif /* WITH_BREAKING_CHANGES */
 		OPT_END()
 	};
 
@@ -771,7 +805,11 @@ static int pop_stash(int argc, const char **argv, const char *prefix,
 	if (get_stash_info_assert(&info, argc, argv))
 		goto cleanup;
 
+#ifdef WITH_BREAKING_CHANGES
+	if ((ret = do_apply_stash(prefix, &info, !no_index, quiet)))
+#else
 	if ((ret = do_apply_stash(prefix, &info, index, quiet)))
+#endif /* WITH_BREAKING_CHANGES */
 		printf_ln(_("The stash entry is kept in case "
 			    "you need it again."));
 	else
