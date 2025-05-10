@@ -89,7 +89,7 @@ test_expect_success 'clean up untracked/untracked file to prepare for next tests
 	git clean --force --quiet
 '
 
-test_expect_success 'stash pop after save --include-untracked leaves files untracked again' '
+test_expect_success !WITH_BREAKING_CHANGES 'stash pop after save --include-untracked leaves files untracked again' '
 	cat >expect <<-EOF &&
 	 M file
 	?? HEAD
@@ -100,6 +100,26 @@ test_expect_success 'stash pop after save --include-untracked leaves files untra
 	EOF
 
 	git stash pop &&
+	git status --porcelain >actual &&
+	test_cmp expect actual &&
+	echo 1 >expect_file2 &&
+	test_cmp expect_file2 file2 &&
+	echo untracked >untracked_expect &&
+	test_cmp untracked_expect untracked/untracked
+'
+
+test_expect_success WITH_BREAKING_CHANGES 'stash pop after save --include-untracked leaves files untracked again' '
+	cat >expect <<-EOF &&
+	MM file
+	?? HEAD
+	?? actual
+	?? expect
+	?? file2
+	?? untracked/
+	EOF
+
+	git stash pop &&
+	test_when_finished "git restore --staged file" &&
 	git status --porcelain >actual &&
 	test_cmp expect actual &&
 	echo 1 >expect_file2 &&
@@ -206,7 +226,7 @@ test_expect_success 'stash push --include-untracked with pathspec' '
 	test_path_is_file foo
 '
 
-test_expect_success 'stash push with $IFS character' '
+test_expect_success !WITH_BREAKING_CHANGES 'stash push with $IFS character' '
 	>"foo bar" &&
 	>foo &&
 	>bar &&
@@ -216,6 +236,21 @@ test_expect_success 'stash push with $IFS character' '
 	test_path_is_file foo &&
 	test_path_is_file bar &&
 	git stash pop &&
+	test_path_is_file "foo bar" &&
+	test_path_is_file foo &&
+	test_path_is_file bar
+'
+
+test_expect_success WITH_BREAKING_CHANGES 'stash push with $IFS character' '
+	>"foo bar" &&
+	>foo &&
+	>bar &&
+	git add foo* &&
+	git stash push --include-untracked -- "foo b*" &&
+	test_path_is_missing "foo bar" &&
+	test_path_is_file foo &&
+	test_path_is_file bar &&
+	git stash pop --no-index &&
 	test_path_is_file "foo bar" &&
 	test_path_is_file foo &&
 	test_path_is_file bar
