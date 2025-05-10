@@ -30,7 +30,7 @@ test_expect_success 'saying "n" does nothing' '
 	verify_state dir/foo work index
 '
 
-test_expect_success 'git stash -p' '
+test_expect_success !WITH_BREAKING_CHANGES 'git stash -p' '
 	test_write_lines y n y | git stash save -p &&
 	verify_state HEAD committed HEADfile_index &&
 	verify_saved_state bar &&
@@ -40,6 +40,18 @@ test_expect_success 'git stash -p' '
 	verify_state HEAD HEADfile_work committed &&
 	verify_state bar dummy dummy &&
 	verify_state dir/foo work head
+'
+
+test_expect_success WITH_BREAKING_CHANGES 'git stash -p' '
+	test_write_lines y n y | git stash save -p &&
+	verify_state HEAD committed HEADfile_index &&
+	verify_saved_state bar &&
+	verify_state dir/foo head index &&
+	git reset --hard &&
+	git stash apply &&
+	verify_state HEAD HEADfile_work HEADfile_index &&
+	verify_state bar dummy bar_index &&
+	verify_state dir/foo work index
 '
 
 test_expect_success 'git stash -p --no-keep-index' '
