@@ -353,7 +353,21 @@ test_submodule_switch_common () {
 	'
 	# Replacing a tracked file with a submodule produces an empty
 	# directory ...
-	test_expect_$RESULT "$command: replace tracked file with submodule creates empty directory" '
+	test_expect_$RESULT !WITH_BREAKING_CHANGES "$command: replace tracked file with submodule creates empty directory" '
+		prolog &&
+		reset_work_tree_to replace_sub1_with_file &&
+		(
+			cd submodule_update &&
+			git branch -t replace_file_with_sub1 origin/replace_file_with_sub1 &&
+			$command replace_file_with_sub1 &&
+			test_superproject_content origin/replace_file_with_sub1 &&
+			test_dir_is_empty sub1 &&
+			git submodule update --init --recursive &&
+			test_submodule_content sub1 origin/replace_file_with_sub1
+		)
+	'
+	# (unless we automatically unstash the index!)
+	test_expect_success WITH_BREAKING_CHANGES "$command: replace tracked file with submodule creates empty directory" '
 		prolog &&
 		reset_work_tree_to replace_sub1_with_file &&
 		(
@@ -368,7 +382,8 @@ test_submodule_switch_common () {
 	'
 	# ... as does removing a directory with tracked files with a
 	# submodule.
-	if test "$KNOWN_FAILURE_NOFF_MERGE_DOESNT_CREATE_EMPTY_SUBMODULE_DIR" = 1
+	if ! test_have_prereq WITH_BREAKING_CHANGES &&
+		test "$KNOWN_FAILURE_NOFF_MERGE_DOESNT_CREATE_EMPTY_SUBMODULE_DIR" = 1
 	then
 		# Non fast-forward merges fail with "Directory sub1 doesn't
 		# exist. sub1" because the empty submodule directory is not
@@ -392,8 +407,9 @@ test_submodule_switch_common () {
 	'
 
 	######################## Disappearing submodule #######################
-	# Removing a submodule doesn't remove its work tree ...
-	if test "$KNOWN_FAILURE_STASH_DOES_IGNORE_SUBMODULE_CHANGES" = 1
+	# Removing a submodule doesn't remove its work tree (unless stash applies the index!) ...
+	if ! test_have_prereq WITH_BREAKING_CHANGES &&
+		test "$KNOWN_FAILURE_STASH_DOES_IGNORE_SUBMODULE_CHANGES" = 1
 	then
 		RESULT="failure"
 	else
