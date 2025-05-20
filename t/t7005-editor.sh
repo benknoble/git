@@ -111,6 +111,8 @@ do
 	'
 done
 
+unset EDITOR VISUAL GIT_EDITOR
+git config --unset-all core.editor
 test_expect_success 'editor with a space' '
 	echo "echo space >\"\$1\"" >"e space.sh" &&
 	chmod a+x "e space.sh" &&
@@ -119,13 +121,10 @@ test_expect_success 'editor with a space' '
 
 '
 
-unset GIT_EDITOR
 test_expect_success 'core.editor with a space' '
-
-	git config core.editor \"./e\ space.sh\" &&
+	test_config core.editor \"./e\ space.sh\" &&
 	git commit --amend &&
 	test space = "$(git show -s --pretty=format:%s)"
-
 '
 
 test_done
