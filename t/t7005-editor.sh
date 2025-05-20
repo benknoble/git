@@ -127,4 +127,17 @@ test_expect_success 'core.editor with a space' '
 	test space = "$(git show -s --pretty=format:%s)"
 '
 
+test_expect_success 'editor does not see GIT_EXEC_PATH on PATH' '
+	cat >e-path <<-EOF &&
+	#!$SHELL_PATH
+	echo "\$PATH" | tr : "\\n" >actual
+	EOF
+	chmod +x e-path &&
+	(
+		test_set_editor ./e-path &&
+		git commit --amend
+	) &&
+	test_grep ! ^"$(git --exec-path)"\$ actual
+'
+
 test_done

@@ -448,11 +448,51 @@ static int prepare_cmd(struct strvec *out, const struct child_process *cmd)
 	return 0;
 }
 
-static char **prep_childenv(const char *const *deltaenv)
+static void remove_git_exec_path(struct string_list_item *path_item) {
+	struct strbuf buf = STRBUF_INIT;
+	const char *exec_path = git_exec_path();
+	size_t exec_len = strlen(exec_path);
+	char *b, *p;
+
+	/* Value comes from environ; we should not modify it directly. But
+	 * strbuf copies data, so we now have our own playground. */
+	strbuf_addstr(&buf, (const char *)path_item->util);
+
+	/* skip past "PATH=" to start search */
+	p = strchr(buf.buf, '=');
+	if (!p || !*(p + 1))
+		return;
+	b = p + 1;
+
+	for (p = strstr(b, exec_path); p; p = strstr(p, exec_path)) {
+		if ((p[exec_len] && p[exec_len] != PATH_SEP) || (p != b && p[-1] != PATH_SEP))
+			p += exec_len; /* false positive, skip */
+		else {
+			size_t offset = p - buf.buf, delete_len = exec_len;
+			if (p != b) {
+				/* include the preceding path separator */
+				offset--;
+				delete_len++;
+			} else if (p[exec_len] == PATH_SEP) {
+				/* include the path separator following GIT_EXEC_PATH */
+				delete_len++;
+			}
+			strbuf_splice(&buf, offset, delete_len, "", 0);
+		}
+	}
+
+	/* Overwrite PATH value with new (owned) data. This leaks memory because
+	 * the only future owner is a char** childenv, which is freed, but whose
+	 * contents are not (because most of them come from environ). */
+	path_item->util = (void *)strbuf_detach(&buf, NULL);
+}
+
+static char **prep_childenv(const char *const *deltaenv, unsigned git_cmd)
 {
 	extern char **environ;
 	char **childenv;
 	struct string_list env = STRING_LIST_INIT_DUP;
+	struct string_list_item *path_item;
 	struct strbuf key = STRBUF_INIT;
 	const char *const *p;
 	int i;
@@ -485,6 +525,9 @@ static char **prep_childenv(const char *const *deltaenv)
 			string_list_remove(&env, *p, 0);
 		}
 	}
+
+	if (!git_cmd && (path_item = string_list_lookup(&env, "PATH")))
+		remove_git_exec_path(path_item);
 
 	/* Create an array of 'char *' to be used as the childenv */
 	ALLOC_ARRAY(childenv, env.nr + 1);
@@ -746,7 +789,7 @@ fail_pipe:
 	if (cmd->close_object_store)
 		close_object_store(the_repository->objects);
 
-	childenv = prep_childenv(cmd->env.v);
+	childenv = prep_childenv(cmd->env.v, cmd->git_cmd);
 
 #ifndef GIT_WINDOWS_NATIVE
 {
