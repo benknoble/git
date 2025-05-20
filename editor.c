@@ -58,7 +58,7 @@ const char *git_sequence_editor(void)
 }
 
 static int launch_specified_editor(const char *editor, const char *path,
-				   struct strbuf *buffer, const char *const *env)
+				   struct strbuf *buffer, const struct strvec *env)
 {
 	if (!editor)
 		return error("Terminal is dumb, but EDITOR unset");
@@ -89,7 +89,7 @@ static int launch_specified_editor(const char *editor, const char *path,
 
 		strvec_pushl(&p.args, editor, realpath.buf, NULL);
 		if (env)
-			strvec_pushv(&p.env, (const char **)env);
+			strvec_pushv(&p.env, env->v);
 		p.use_shell = 1;
 		p.trace2_child_class = "editor";
 		if (start_command(&p) < 0) {
@@ -124,20 +124,20 @@ static int launch_specified_editor(const char *editor, const char *path,
 	return 0;
 }
 
-int launch_editor(const char *path, struct strbuf *buffer, const char *const *env)
+int launch_editor(const char *path, struct strbuf *buffer, const struct strvec *env)
 {
 	return launch_specified_editor(git_editor(), path, buffer, env);
 }
 
 int launch_sequence_editor(const char *path, struct strbuf *buffer,
-			   const char *const *env)
+			   const struct strvec *env)
 {
 	return launch_specified_editor(git_sequence_editor(), path, buffer, env);
 }
 
 int strbuf_edit_interactively(struct repository *r,
 			      struct strbuf *buffer, const char *path,
-			      const char *const *env)
+			      const struct strvec *env)
 {
 	struct strbuf sb = STRBUF_INIT;
 	int fd, res = 0;
