@@ -680,6 +680,7 @@ int start_command(struct child_process *cmd)
 	int fdin[2], fdout[2], fderr[2];
 	int failed_errno;
 	const char *str;
+	char **childenv;
 
 	/*
 	 * In case of errors we must keep the promise to close FDs
@@ -745,11 +746,12 @@ fail_pipe:
 	if (cmd->close_object_store)
 		close_object_store(the_repository->objects);
 
+	childenv = prep_childenv(cmd->env.v);
+
 #ifndef GIT_WINDOWS_NATIVE
 {
 	int notify_pipe[2];
 	int null_fd = -1;
-	char **childenv;
 	struct strvec argv = STRVEC_INIT;
 	struct child_err cerr;
 	struct atfork_state as;
@@ -772,7 +774,6 @@ fail_pipe:
 		set_cloexec(null_fd);
 	}
 
-	childenv = prep_childenv(cmd->env.v);
 	atfork_prepare(&as);
 
 	/*
@@ -893,7 +894,6 @@ fail_pipe:
 	if (null_fd >= 0)
 		close(null_fd);
 	strvec_clear(&argv);
-	free(childenv);
 }
 end_of_spawn:
 
@@ -933,7 +933,7 @@ end_of_spawn:
 
 	trace_argv_printf(cmd->args.v, "trace: start_command:");
 	cmd->pid = mingw_spawnvpe(cmd->args.v[0], cmd->args.v,
-				  (char**) cmd->env.v,
+				  childenv,
 				  cmd->dir, fhin, fhout, fherr);
 	failed_errno = errno;
 	if (cmd->pid < 0 && (!cmd->silent_exec_failure || errno != ENOENT))
@@ -951,6 +951,8 @@ end_of_spawn:
 		close(fherr);
 }
 #endif
+
+	free(childenv);
 
 	if (cmd->pid < 0) {
 		trace2_child_exit(cmd, -1);
