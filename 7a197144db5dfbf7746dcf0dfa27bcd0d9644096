@@ -1,0 +1,4 @@
+- t/t9902-completion.sh passes, except one test which is currently
+  failing seen anyway
+- advice on completing the --to-ref argument welcome, but I also think
+  it's acceptable to not offer any completion there
