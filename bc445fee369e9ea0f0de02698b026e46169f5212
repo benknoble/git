@@ -1,0 +1,2 @@
+I considered having generate-configlist.sh write its own dependency
+list, which Meson also supports… idk though. Input welcome :)
