@@ -1,0 +1,6 @@
+- t/t9902-completion.sh passes
+- advice on completing the --to-ref argument welcome, but I also think
+  it's acceptable to not offer any completion there
+
+I happened to build this off of next, but it applies cleanly to master
+(which is probably the most appropriate base).
