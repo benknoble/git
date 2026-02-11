@@ -1,8 +1,8 @@
 Changes from v2 (<c9ae171eed6bd5b0fa6671b10a5ad0da024f36d0.1770649805.git.ben.knoble+github@gmail.com>):
 
-* Pick up (and tweak) Patrick's depfile proposal
-* Include the script itself as a dependency
-* Escape output paths (spaces, octothorpes, and backslashes) for Ninja
+• Pick up (and tweak) Patrick's depfile proposal
+• Include the script itself as a dependency
+• Escape output paths (spaces, octothorpes, and backslashes) for Ninja
 
 I'm not 100% sure I've actually done the escaping correctly, though,
 since Ninja's source says that a space preceded by 2N backslashes
