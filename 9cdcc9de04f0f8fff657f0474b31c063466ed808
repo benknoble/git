@@ -1,9 +1,10 @@
 Changes from v3 (<0a344f1f3ee4a5d95c6f46df030b9936db4354a1.1770853297.git.ben.knoble+github@gmail.com>):
 
 • Include the script itself as a dependency via depfile
-• Fix output path escaping (spaces, octothorpes; drop backslashes) for Ninja
-    (I've used a loop because I couldn't find a portable construct that
-    could escape only the remainder of the lines in the way I wanted).
+• Fix output path escaping (spaces, octothorpes; drop backslashes) for
+  Ninja (I've used a loop because I couldn't find a portable construct
+  that could escape only the remainder of the lines in the way I
+  wanted).
 • Mention our assumptions about Documentation updates triggering
   rebuilds
 • Also include some debugging information in the commit message
