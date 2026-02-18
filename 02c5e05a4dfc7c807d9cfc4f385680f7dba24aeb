@@ -1,10 +1,19 @@
-Changes from v3 (<0a344f1f3ee4a5d95c6f46df030b9936db4354a1.1770853297.git.ben.knoble+github@gmail.com>):
+Changes from v4 (<9cdcc9de04f0f8fff657f0474b31c063466ed808.1771280837.git.ben.knoble+github@gmail.com>):
 
-• Include the script itself as a dependency via depfile
-• Fix output path escaping (spaces, octothorpes; drop backslashes) for
-  Ninja (I've used a loop because I couldn't find a portable construct
-  that could escape only the remainder of the lines in the way I
-  wanted).
-• Mention our assumptions about Documentation updates triggering
-  rebuilds
-• Also include some debugging information in the commit message
+• Include Patrick's suggested Makefile changes. Note there's no quiet
+  equivalent for mdkir that isn't for the current target's containing
+  directory…
+• Make depfile output efficient again, thanks to Phillip.
+
+I've kept printf instead of echo (from Patrick/Junio) because I think it
+is easier to reason about ("it works" vs. "did I use this in a way that
+might cause problems").
+
+Junio asked about other problematic bytes: the other one I could think
+of (since all the inputs should be paths, anyway) is newlines. I gave
+meson's depfile.py a glance [1], and it looks like they don't handle
+newlines in paths. Other whitespace doesn't appear to be an issue (see
+"elif c in {' ', '\n'}"); I think _most_ characters are just added to
+the filename.
+
+[1]: https://github.com/mesonbuild/meson/blob/master/mesonbuild/depfile.py
