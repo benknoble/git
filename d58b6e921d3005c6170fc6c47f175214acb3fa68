@@ -26,6 +26,8 @@ implemented), I've opted to adjust the docs. They originally confused
 me, as I was surprised when my colleague reported that per-worktree
 ignores didn't work (the docs imply they should by use of $GIT_DIR).
 
+Link to v1: <e3ee0a11b566dd2cc605447c111ae4620bce0fe6.1777050300.git.ben.knoble+github@gmail.com>
+
 v1 notes:
 
 Discussed briefly at https://lore.kernel.org/git/CALnO6CCXmA+ATT7CuyWkU6P8qmLCCpMi5Ppr1c78s0heznpVyw@mail.gmail.com/T
