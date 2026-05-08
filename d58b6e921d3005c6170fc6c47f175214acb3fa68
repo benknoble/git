@@ -1,1 +1,36 @@
+Changes in v2:
+
+Only adjust the documentation.
+
+brian points out that a more general extension would allow using more
+info/ files as "per-worktree," which I don't have the impetus to
+implement myself.
+
+Phillip and Junio asked for a concrete use case:
+
+    A colleague is developing a tool for managing the "skill files" of
+    various LLM tools (Claude, Windsurf, etc.). The files have
+    requirements that make it hard to generically ignore them (e.g.,
+    filenames and front-matter have to match), but different tasks
+    (corresponding to worktrees) may want different active skills, so it
+    is desirable to ignore the files. Think of this like node_modules.
+
+    Unfortunately, since per-worktree ignores don't work, the current
+    solution is to put a .gitignore file in the corresponding directory
+    with the installed skills that ignores itself and the installed
+    skills.
+
+Since overall reactions seem fairly negative (or require a more general
+extension, which I think is probably the right course but not simply
+implemented), I've opted to adjust the docs. They originally confused
+me, as I was surprised when my colleague reported that per-worktree
+ignores didn't work (the docs imply they should by use of $GIT_DIR).
+
+v1 notes:
+
 Discussed briefly at https://lore.kernel.org/git/CALnO6CCXmA+ATT7CuyWkU6P8qmLCCpMi5Ppr1c78s0heznpVyw@mail.gmail.com/T
+
+This is based on next (4f69b47b94 (Merge branch 'ps/test-set-e-clean'
+into next, 2026-04-23)) but cleanly applies to master (94f057755b (Git
+2.54, 2026-04-19)) and seen (50541634cb (Merge branch
+'js/parseopt-subcommand-autocorrection' into seen, 2026-04-23)).
