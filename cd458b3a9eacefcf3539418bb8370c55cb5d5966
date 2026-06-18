@@ -1,0 +1,41 @@
+Replies
+
+In reply to Junio:
+
+> [the new handling only knows about -C]
+> Doesn't it want to do something similar to what __git_main in
+> git-completion.bash does at the beginning, namely, this part?
+
+Yeah, we probably do want to skip over -c, etc. (I see some support for
+--bare and --git-dir, but not skipping over it.) Still, this patch makes
+things no worse in that regard, and improves the situation for -C
+AFAICT.
+
+In reply to the author:
+
+> +		local -a __git_C_args
+> +		local -i i=2
+> +
+> +		while [[ ${orig_words[i]} == -C ]]; do
+> +			__git_C_args+=(-C ${orig_words[i+1]})
+> +			(( __git_cmd_idx += 2 ))
+> +			(( i += 2 ))
+> +		done
+
+I don't see either of these 2 local variables used anywhere else…
+
+…well, except the Bash completion helpers, I suppose. But we mark these
+local, so how do they propagate to the other functions?
+
+> +		'*-C[run as if git was started in <path>]: :_directories' \
+
+We should probably note in the log message that the _directories
+completion will not account for previous -C; that is, after typing
+
+    git -C dir -C <tab>
+
+we will complete directories in ".", not "dir". That's probably a
+reasonable limitation for now, but I think we could do _slightly_ better
+by using a state "->dir" or something, accumulating the current prefix,
+and passing that to _directories as a prefix with -W (see _path_files in
+zshcompsys, which _directories delegates to via _files, IIUC).
