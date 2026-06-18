@@ -27,6 +27,84 @@ I don't see either of these 2 local variables used anywhere else…
 …well, except the Bash completion helpers, I suppose. But we mark these
 local, so how do they propagate to the other functions?
 
+Still, I was able to try this out with the somewhat hacky
+
+    zsh # new shell :)
+    # absolute path important
+    autoload -Uz $PWD/contrib/completion/git-completion.zsh
+    compdef git-completion.zsh git
+
+    git -C <tab>
+
+and it does prioritize directories there (though I still get a listing
+of files afterwards, so the screen is taken up by that gigantic listing
+in git.git, for example).
+
+By the way, I've realized that "git -<tab>" has the same problem (a
+giant list of files after the other option completions), and worse has
+some _funky_ output!
+
+    git -<tab> # without patch
+    (option)
+    --bare
+    --exec-path
+    --git-dir
+    --help
+    --html-path
+    --info-path
+    --man-path
+    --namespace
+    --no-pager
+    --no-replace-objects
+    --paginate
+    --version
+    --work-tree
+
+    -p
+
+    # treat the repository as a bare repository
+    # path to where your core git programs are installed
+    # set the path to the repository
+    # prints the synopsis and a list of the most commonly used commands
+    # print the path where gits HTML documentation is installed
+    # print the path where the Info files are installed
+    # print the manpath (see `man(1)`) for the man pages
+    # set the git namespace
+    # do not pipe git output into a pager
+    # do not use replacement refs to replace git objects
+    # pipe all output into less
+    # prints the git suite version
+    # set the path to the working tree
+    [ed: the above block repeats twice more before the (file) listing below]
+    (file)
+    […]
+
+Here's the output of _complete_help (^Xh by default) in both situations,
+in case that helps to understand either the extra files listing (1) in
+the example further back or the issue with single letter options (2)
+just mentioned:
+
+1: tags in context :completion::complete:git::
+    option-C-1     (_arguments __git_zsh_main _git git-completion.zsh)
+    use-compctl    (_default _git git-completion.zsh)
+    globbed-files  (_files _default _git git-completion.zsh)
+tags in context :completion::complete:git:option-C-1:
+    directories    (_directories _arguments __git_zsh_main _git git-completion.zsh)
+    globbed-files  (_files _directories _arguments __git_zsh_main _git git-completion.zsh)
+    all-files      (_files _directories _arguments __git_zsh_main _git git-completion.zsh)
+
+2: tags in context :completion::complete:git::
+    argument-1 options  (_arguments __git_zsh_main _git)
+    use-compctl         (_default _git)
+    globbed-files       (_files _default _git)
+tags in context :completion::complete:git:argument-1:
+    common-commands alias-commands all-commands  (__git_zsh_main _git)
+    common-commands                              (__git_zsh_cmd_common __git_zsh_main _git)
+    alias-commands                               (__git_zsh_cmd_alias __git_zsh_main _git)
+    all-commands                                 (__git_zsh_cmd_all __git_zsh_main _git)
+tags in context :completion::complete:git:options:
+    options  (_arguments __git_zsh_main _git)
+
 > +		'*-C[run as if git was started in <path>]: :_directories' \
 
 We should probably note in the log message that the _directories
