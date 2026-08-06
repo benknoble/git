@@ -1,0 +1,17 @@
+Repeating the benchmark from my original mail [1] shows an improvement
+
+# git worktree add -d ../perf-test HEAD
+# hyperfine -N --warmup=10 './build/bin-wrappers/git diff'
+Benchmark 1: ./build/bin-wrappers/git diff
+  Time (mean ± σ):       3.8 ms ±   0.4 ms    [User: 4.7 ms, System: 4.4 ms]
+  Range (min … max):     3.2 ms …   5.6 ms    780 runs
+# (pushd ../perf-test && hyperfine -N --warmup=10 $OLDPWD/'./build/bin-wrappers/git diff')
+Benchmark 1: /home/benknoble/code/git/./build/bin-wrappers/git diff
+  Time (mean ± σ):     217.5 ms ±   2.9 ms    [User: 202.1 ms, System: 23.4 ms]
+  Range (min … max):   213.9 ms … 223.3 ms    13 runs
+# (pushd ../perf-test && hyperfine -N --warmup=10 $OLDPWD/'./build/bin-wrappers/git -c core.useNanosec=true diff')
+Benchmark 1: /home/benknoble/code/git/./build/bin-wrappers/git -c core.useNanosec=true diff
+  Time (mean ± σ):       3.8 ms ±   0.4 ms    [User: 5.3 ms, System: 4.2 ms]
+  Range (min … max):     3.2 ms …   6.9 ms    541 runs
+
+[1]: <CALnO6CADMJSixqYvL1Yo8qKX5rWhKQ+2OoSEuPUh-yoeK9TseQ@mail.gmail.com>
