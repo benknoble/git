@@ -1,0 +1,7 @@
+This patch is mostly because I noticed the link I added in a later patch
+didn't come out right.
+
+I did an internet search for "MAN_BASE_URL" and got no real hits, so I'm
+not sure if any distros today actually use it, but that's not a proper
+audit in that I didn't look at any distro _code_ besides Gentoo (which,
+as noted, uses Meson).
