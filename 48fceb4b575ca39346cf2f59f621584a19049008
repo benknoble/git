@@ -1,2 +1,19 @@
 Related benchmarks: <https://lore.kernel.org/git/CALnO6CBm4g27mWBvD9m6yL0e5YZu3M9_zcUeLZk7QwTgnxMLQA@mail.gmail.com/>
-CI: <https://github.com/benknoble/git/actions/runs/31701945211>
+CI(v2): <https://github.com/benknoble/git/actions/runs/31701945211>
+
+v3:
+    We could perhaps be cute in read-cache.c:is_racy_stat() by writing
+    the preprocessor directive like
+
+		return (istate->timestamp.sec &&
+	#ifndef NO_NSEC
+			/* nanosecond timestamped files can also be racy! */
+			use_nsec
+			? (istate->timestamp.sec < sd->sd_mtime.sec ||
+			   (istate->timestamp.sec == sd->sd_mtime.sec &&
+			    istate->timestamp.nsec <= sd->sd_mtime.nsec))
+			:
+	#endif
+			istate->timestamp.sec <= sd->sd_mtime.sec
+
+    but that seemed maybe too clever?
