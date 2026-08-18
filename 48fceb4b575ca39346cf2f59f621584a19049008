@@ -1,5 +1,5 @@
 Related benchmarks: <https://lore.kernel.org/git/CALnO6CBm4g27mWBvD9m6yL0e5YZu3M9_zcUeLZk7QwTgnxMLQA@mail.gmail.com/>
-CI(v2): <https://github.com/benknoble/git/actions/runs/31701945211>
+CI: <https://github.com/benknoble/git/actions/runs/32137191115>
 
 v3:
     We could perhaps be cute in read-cache.c:is_racy_stat() by writing
