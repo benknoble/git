@@ -1,0 +1,13 @@
+We *could* leave the asserts in, but then we somewhat uselessly set the
+conflict labels, which I did in the original patch [1]. Phillip
+suggested we don't need them, and I otherwise agree.
+
+[1]: https://lore.kernel.org/git/CALnO6CDfwscMWZktBu3FtXOQVbcBRo76nqK07kMnrzC5cPyZiQ@mail.gmail.com/
+
+In all the versions of 231e2dd49d (merge-ort: add some high-level
+algorithm structure, 2020-12-13) I could find on the mailing list, the
+"assert(opt->ancestor)" is present without explanation or comment, so
+I'm not in a good place to assess the impact of removing it and its
+compatriots.
+
+Cc: Elijah Newren <newren@gmail.com>
